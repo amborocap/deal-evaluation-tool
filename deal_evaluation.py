@@ -12,7 +12,6 @@ SCORING_WEIGHTS = {
     "Mission-Critical Offering": 20.0,
     "Recurring Revenue": 20.0,
     "Stable Margins": 20.0,
-    "Customer/Supplier Concentration": 20.0,
 }
 
 def extract_text_from_pdf(pdf_file):
@@ -20,7 +19,9 @@ def extract_text_from_pdf(pdf_file):
     text = ""
     with pdfplumber.open(pdf_file) as pdf:
         for page in pdf.pages:
-            text += page.extract_text() + "\n"
+            page_text = page.extract_text()
+            if page_text:
+                text += page_text + "\n"
     return text
 
 def extract_text_from_docx(docx_file):
@@ -34,25 +35,38 @@ def extract_key_metrics(text):
         "EBIT": re.search(r"EBIT[^\d]*(\d+[,.]?\d*)", text),
         "Revenue Growth": re.search(r"growth[^\d]*(\d+[,.]?\d*)%", text),
         "EBIT Margins": re.search(r"EBIT margin[^\d]*(\d+[,.]?\d*)%", text),
-        "Largest Customer %": re.search(r"largest customer[^\d]*(\d+[,.]?\d*)%", text),
     }
-    return {key: float(val.group(1).replace(',', '.')) if val else None for key, val in metrics.items()}
+    
+    # Convert extracted values, set defaults if missing
+    return {key: float(val.group(1).replace(',', '.')) if val else 0.0 for key, val in metrics.items()}
 
 def score_deal(metrics):
-    """Assign scores based on extracted metrics."""
+    """Assign scores based on extracted metrics, handling missing values."""
     scores = {}
     
     # EBIT Scoring
-    scores["Size (EBIT)"] = 5 if metrics["EBIT"] and metrics["EBIT"] > 3 else 4 if metrics["EBIT"] > 2 else 3 if metrics["EBIT"] > 1.5 else 2 if metrics["EBIT"] > 1 else 1
+    scores["Size (EBIT)"] = (
+        5 if metrics["EBIT"] > 3 else
+        4 if metrics["EBIT"] > 2 else
+        3 if metrics["EBIT"] > 1.5 else
+        2 if metrics["EBIT"] > 1 else 1
+    )
     
     # Revenue Growth Scoring
-    scores["Market Growth"] = 5 if metrics["Revenue Growth"] and metrics["Revenue Growth"] > 8 else 4 if metrics["Revenue Growth"] > 6 else 3 if metrics["Revenue Growth"] > 5 else 2 if metrics["Revenue Growth"] > 3 else 1
+    scores["Market Growth"] = (
+        5 if metrics["Revenue Growth"] > 8 else
+        4 if metrics["Revenue Growth"] > 6 else
+        3 if metrics["Revenue Growth"] > 5 else
+        2 if metrics["Revenue Growth"] > 3 else 1
+    )
     
     # EBIT Margins Scoring
-    scores["Stable Margins"] = 5 if metrics["EBIT Margins"] and metrics["EBIT Margins"] > 20 else 4 if metrics["EBIT Margins"] > 15 else 3 if metrics["EBIT Margins"] > 10 else 2 if metrics["EBIT Margins"] > 5 else 1
-    
-    # Customer Concentration Scoring
-    scores["Customer/Supplier Concentration"] = 5 if metrics["Largest Customer %"] and metrics["Largest Customer %"] < 5 else 4 if metrics["Largest Customer %"] < 7 else 3 if metrics["Largest Customer %"] < 10 else 2 if metrics["Largest Customer %"] < 15 else 1
+    scores["Stable Margins"] = (
+        5 if metrics["EBIT Margins"] > 20 else
+        4 if metrics["EBIT Margins"] > 15 else
+        3 if metrics["EBIT Margins"] > 10 else
+        2 if metrics["EBIT Margins"] > 5 else 1
+    )
     
     return scores
 
