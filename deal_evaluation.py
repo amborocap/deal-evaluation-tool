@@ -35,16 +35,21 @@ def extract_key_metrics(text):
         "EBIT": re.search(r"EBIT[^\d]*(\d+[,.]?\d*)", text),
         "Revenue Growth": re.search(r"growth[^\d]*(\d+[,.]?\d*)%", text),
         "EBIT Margins": re.search(r"EBIT margin[^\d]*(\d+[,.]?\d*)%", text),
-        "Revenue 2022": re.search(r"Revenue[^\d]*(2022)[^\d]*(\d+[,.]?\d*)", text),
-        "Revenue 2023": re.search(r"Revenue[^\d]*(2023)[^\d]*(\d+[,.]?\d*)", text),
-        "Revenue 2024": re.search(r"Revenue[^\d]*(2024)[^\d]*(\d+[,.]?\d*)", text),
-        "EBIT 2022": re.search(r"EBIT[^\d]*(2022)[^\d]*(\d+[,.]?\d*)", text),
-        "EBIT 2023": re.search(r"EBIT[^\d]*(2023)[^\d]*(\d+[,.]?\d*)", text),
-        "EBIT 2024": re.search(r"EBIT[^\d]*(2024)[^\d]*(\d+[,.]?\d*)", text),
+        "Revenue 2022": re.search(r"Revenue[^\d]*2022[^\d]*(\d+[,.]?\d*)", text),
+        "Revenue 2023": re.search(r"Revenue[^\d]*2023[^\d]*(\d+[,.]?\d*)", text),
+        "Revenue 2024": re.search(r"Revenue[^\d]*2024[^\d]*(\d+[,.]?\d*)", text),
+        "EBIT 2022": re.search(r"EBIT[^\d]*2022[^\d]*(\d+[,.]?\d*)", text),
+        "EBIT 2023": re.search(r"EBIT[^\d]*2023[^\d]*(\d+[,.]?\d*)", text),
+        "EBIT 2024": re.search(r"EBIT[^\d]*2024[^\d]*(\d+[,.]?\d*)", text),
     }
     
     # Convert extracted values, set defaults if missing
-    extracted_metrics = {key: float(val.group(2).replace(',', '.')) if val else 0.0 for key, val in metrics.items()}
+    extracted_metrics = {}
+    for key, val in metrics.items():
+        try:
+            extracted_metrics[key] = float(val.group(1).replace(',', '.')) if val else 0.0
+        except AttributeError:
+            extracted_metrics[key] = 0.0
     
     # Debugging: Print extracted metrics
     print("Extracted Metrics:", extracted_metrics)
