@@ -7,13 +7,12 @@ import streamlit as st
 
 # Define scoring criteria
 SCORING_WEIGHTS = {
-    "Size (EBIT)": 14.3,
-    "Market Growth": 14.3,
-    "Mission-Critical Offering": 14.3,
-    "Recurring Revenue": 14.3,
-    "Stable Margins": 14.3,
-    "Customer/Supplier Concentration": 14.3,
-    "Capital Intensity": 14.3,
+    "Size (EBIT)": 20.0,
+    "Market Growth": 20.0,
+    "Mission-Critical Offering": 20.0,
+    "Recurring Revenue": 20.0,
+    "Stable Margins": 20.0,
+    "Customer/Supplier Concentration": 20.0,
 }
 
 def extract_text_from_pdf(pdf_file):
@@ -35,7 +34,6 @@ def extract_key_metrics(text):
         "EBIT": re.search(r"EBIT[^\d]*(\d+[,.]?\d*)", text),
         "Revenue Growth": re.search(r"growth[^\d]*(\d+[,.]?\d*)%", text),
         "EBIT Margins": re.search(r"EBIT margin[^\d]*(\d+[,.]?\d*)%", text),
-        "Capex": re.search(r"Capex[^\d]*(\d+[,.]?\d*)", text),
         "Largest Customer %": re.search(r"largest customer[^\d]*(\d+[,.]?\d*)%", text),
     }
     return {key: float(val.group(1).replace(',', '.')) if val else None for key, val in metrics.items()}
@@ -52,10 +50,6 @@ def score_deal(metrics):
     
     # EBIT Margins Scoring
     scores["Stable Margins"] = 5 if metrics["EBIT Margins"] and metrics["EBIT Margins"] > 20 else 4 if metrics["EBIT Margins"] > 15 else 3 if metrics["EBIT Margins"] > 10 else 2 if metrics["EBIT Margins"] > 5 else 1
-    
-    # Capex Intensity Scoring
-    capex_to_ebitda = (metrics["Capex"] / metrics["EBIT"]) * 100 if metrics["Capex"] and metrics["EBIT"] else None
-    scores["Capital Intensity"] = 5 if capex_to_ebitda and capex_to_ebitda < 10 else 4 if capex_to_ebitda < 20 else 3 if capex_to_ebitda < 30 else 2 if capex_to_ebitda < 40 else 1
     
     # Customer Concentration Scoring
     scores["Customer/Supplier Concentration"] = 5 if metrics["Largest Customer %"] and metrics["Largest Customer %"] < 5 else 4 if metrics["Largest Customer %"] < 7 else 3 if metrics["Largest Customer %"] < 10 else 2 if metrics["Largest Customer %"] < 15 else 1
